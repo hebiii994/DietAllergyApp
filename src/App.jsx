@@ -9,15 +9,28 @@ const DietDashboard = () => {
   // Stato per memorizzare la scelta del pranzo per ogni giorno (0 = Opzione A, 1 = Opzione B)
   const [lunchSelections, setLunchSelections] = useState(Array(7).fill(0));
 
+  // Stato per la lista della spesa (Set di item selezionati)
+  const [checkedItems, setCheckedItems] = useState(new Set());
+
   const toggleLunchOption = (dayIndex) => {
     const newSelections = [...lunchSelections];
     newSelections[dayIndex] = newSelections[dayIndex] === 0 ? 1 : 0;
     setLunchSelections(newSelections);
   };
 
+  const toggleShoppingItem = (item) => {
+    const newChecked = new Set(checkedItems);
+    if (newChecked.has(item)) {
+      newChecked.delete(item);
+    } else {
+      newChecked.add(item);
+    }
+    setCheckedItems(newChecked);
+  };
+
   const goToRecipe = (dishName) => {
     // Logica migliorata: Cerca la ricetta il cui nome è contenuto nel piatto
-    // Ordina per lunghezza decrescente per trovare la corrispondenza più specifica (es. "Ragù Bianco" invece di un generico "Pasta")
+    // Ordina per lunghezza decrescente per trovare la corrispondenza più specifica
     const targetRecipe = RECIPES
       .filter(r => dishName.toLowerCase().includes(r.name.toLowerCase()))
       .sort((a, b) => b.name.length - a.name.length)[0];
@@ -26,7 +39,7 @@ const DietDashboard = () => {
       setHighlightedRecipe(targetRecipe.name);
       setActiveTab('recipes');
     } else {
-      // Fallback: prova a cercare parole chiave se non trova corrispondenza diretta
+      // Fallback: prova a cercare parole chiave
       const keywords = dishName.split(' ');
       const fallback = RECIPES.find(r => keywords.some(k => r.name.toLowerCase().includes(k.toLowerCase()) && k.length > 3));
       if (fallback) {
@@ -255,6 +268,15 @@ const DietDashboard = () => {
       ]
     },
     {
+      name: 'Petto di Tacchino',
+      tools: 'Piastra',
+      steps: [
+        'Scaldare bene la piastra.',
+        'Cuocere il tacchino 3-4 minuti per lato.',
+        'Condire con olio e sale a crudo.'
+      ]
+    },
+    {
       name: 'Bistecca ai ferri',
       tools: 'Griglia/Ghisa',
       steps: [
@@ -299,6 +321,41 @@ const DietDashboard = () => {
       ]
     },
     {
+      name: 'Branzino al Cartoccio',
+      tools: 'Forno',
+      steps: [
+        'Mettere il branzino su carta forno.',
+        'Aggiungere pomodorini (NO - solo se tollerati, qui NO), olive e capperi.',
+        'Chiudere e cuocere a 200°C per 20 minuti.'
+      ]
+    },
+    {
+      name: 'Frittata al forno',
+      tools: 'Forno',
+      steps: [
+        'Sbattere le uova con sale e pepe.',
+        'Aggiungere le bietole cotte.',
+        'Cuocere in teglia foderata a 180°C per 15-20 minuti.'
+      ]
+    },
+    {
+      name: 'Vellutata di Zucca',
+      tools: 'Pentola',
+      steps: [
+        'Cuocere zucca e patate con brodo.',
+        'Frullare tutto.',
+        'Servire con olio e semi di zucca.'
+      ]
+    },
+    {
+      name: 'Brodo vegetale',
+      tools: 'Pentola',
+      steps: [
+        'Bollire carota, sedano e cipolla per 1 ora.',
+        'Filtrare e usare per stracciatella o risotti.'
+      ]
+    },
+    {
       name: 'PIZZA BIANCA Safe',
       tools: 'Forno',
       steps: [
@@ -319,12 +376,13 @@ const DietDashboard = () => {
 
         return (
           <div className="space-y-4">
-            <div className="grid grid-cols-7 gap-2 mb-4 overflow-x-auto pb-2">
+            {/* FIX: Changed grid to flex with overflow for mobile scrolling */}
+            <div className="flex gap-2 mb-4 overflow-x-auto pb-2 snap-x">
               {WEEKLY_MENU.map((day, index) => (
                 <button
                   key={index}
                   onClick={() => setSelectedDay(index)}
-                  className={`p-2 text-sm rounded-lg font-medium transition-colors whitespace-nowrap ${selectedDay === index
+                  className={`p-2 text-sm rounded-lg font-medium transition-colors whitespace-nowrap flex-shrink-0 snap-center ${selectedDay === index
                       ? 'bg-blue-600 text-white shadow-md'
                       : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
                     }`}
@@ -466,8 +524,18 @@ const DietDashboard = () => {
                 </h4>
                 <ul className="space-y-2">
                   {category.items.map((item, iIdx) => (
-                    <li key={iIdx} className="flex items-center gap-2 text-sm text-slate-600 hover:bg-slate-50 p-1 rounded cursor-pointer">
-                      <div className="w-4 h-4 border-2 border-slate-300 rounded hover:border-blue-500"></div>
+                    <li
+                      key={iIdx}
+                      onClick={() => toggleShoppingItem(item)}
+                      className={`flex items-center gap-2 text-sm p-2 rounded cursor-pointer transition-colors ${checkedItems.has(item)
+                          ? 'bg-slate-50 text-slate-400 line-through'
+                          : 'text-slate-600 hover:bg-slate-50'
+                        }`}
+                    >
+                      <div className={`w-4 h-4 border-2 rounded flex items-center justify-center transition-colors ${checkedItems.has(item) ? 'border-slate-300 bg-slate-200' : 'border-slate-300 hover:border-blue-500'
+                        }`}>
+                        {checkedItems.has(item) && <Check size={10} className="text-slate-500" />}
+                      </div>
                       {item}
                     </li>
                   ))}
